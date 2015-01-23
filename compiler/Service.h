@@ -3,7 +3,7 @@
 
 #include "Definition.h"
 #include "Field.h"
-
+#include "CodeGenerator.h"
 /** Bintalk's method. */
 class Method : public FieldContainer
 {
@@ -27,6 +27,9 @@ public:
 				return true;
 		return false;
 	}
+
+	virtual void visit(CodeGenerator *cg){cg->accept(this);}
+	
 	std::vector<Method>	methods_;
 };
 

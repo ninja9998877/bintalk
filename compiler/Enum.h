@@ -3,8 +3,9 @@
 
 #include <vector>
 #include <algorithm>
+#include "Context.h"
 #include "Definition.h"
-
+#include "CodeGenerator.h"
 /** Bintalk's enumeration definition. */
 class Enum : public Definition
 {
@@ -17,7 +18,9 @@ public:
 	{
 		return (std::find(items_.begin(), items_.end(), item) == items_.end())?false:true;
 	}
-
+	
+	virtual void visit(CodeGenerator *cg){cg->accept(this);}
+	
 	/** Item names. */
 	std::vector<std::string>	items_;
 };

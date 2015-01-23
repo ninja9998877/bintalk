@@ -7,7 +7,7 @@
 class Enum;
 class Struct;
 class Service;
-
+class CodeGenerator;
 /** Bintalk's basic definition. */
 class Definition
 {
@@ -19,8 +19,11 @@ public:
 	virtual Struct*	getStruct()		{ return NULL; }
 	virtual Service*getService()	{ return NULL; }
 
+	virtual void visit(CodeGenerator *cg){};
+
 	const char* getFileC()	{ return file_.c_str(); }
 	const char* getNameC()	{ return name_.c_str(); }
+	
 
 	/** The file this definition belongs to. */
 	std::string		file_;

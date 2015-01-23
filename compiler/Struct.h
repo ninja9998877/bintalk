@@ -12,6 +12,7 @@ class Struct :
 public:
 	Struct() {}
 	virtual Struct*	getStruct()	{ return this; }
+	virtual void visit(CodeGenerator *cg){cg->accept(this);}
 };
 
 
