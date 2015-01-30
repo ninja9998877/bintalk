@@ -1,10 +1,8 @@
 #include "Options.h"
 #include "Context.h"
 #include "CodeFile.h"
-
-#include "CodeGenerator.h"
-DECLARE_CG(CSGenerator, cs);
-
+#include "CSGenerator.h"
+static CSGenerator gen__inside;
 static void generateEnum(CodeFile& f, Enum* e)
 {
 	f.output("public enum %s : byte", e->getNameC());

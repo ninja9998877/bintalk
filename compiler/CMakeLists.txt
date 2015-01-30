@@ -33,6 +33,10 @@ set(SPEC_FILES
 	Struct.h
 	)
 set(GEN_FILES
+	CppGenerator.h
+	PYGenerator.h
+	ERLGenerator.h
+	CSGenerator.h
 	CppGenerator.cpp
 	PYGenerator.cpp
 	ERLGenerator.cpp

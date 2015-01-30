@@ -1,20 +1,16 @@
 #include "Options.h"
 #include "Context.h"
 #include "CodeFile.h"
+#include "CppGenerator.h"
 
-#include "CodeGenerator.h"
-DECLARE_CG(CppGenerator, cpp);
+#include "Options.h"
+#include "Context.h"
+#include "CodeFile.h"
+#include "CppGenerator.h"
 
-static void generateEnumDecl(CodeFile& f, Enum* e)
-{
-	f.output("enum %s", e->getNameC());
-	f.indent("{");
-	for(size_t i = 0; i < e->items_.size(); i++)
-		f.output("%s,", e->items_[i].c_str());
-	f.recover("};");
-}
+static CppGenerator gen__inside;
 
-static const char* getFieldCppType(Field& f)
+const char* CppGenerator::getFieldCppType(Field& f)
 {
 	static std::string name;
 	switch(f.type_)
@@ -39,7 +35,7 @@ static const char* getFieldCppType(Field& f)
 	return name.c_str();
 }
 
-static const char* getFieldCppParamType(Field& f, bool isS)
+const char* CppGenerator::getFieldCppParamType(Field& f, bool isS)
 {
 	static std::string name;
 	name = getFieldCppType(f);
@@ -51,7 +47,7 @@ static const char* getFieldCppParamType(Field& f, bool isS)
 	return name.c_str();
 }
 
-static const char* getFieldCppDefault(Field& f)
+const char* CppGenerator::getFieldCppDefault(Field& f)
 {
 	static std::string name;
 	if(f.isArray())
@@ -78,7 +74,7 @@ static const char* getFieldCppDefault(Field& f)
 	return name.c_str();
 }
 
-static const char* getFieldFuncName(Field& f)
+const char* CppGenerator::getFieldFuncName(Field& f)
 {
 	static std::string n;
 	switch(f.type_)
@@ -103,7 +99,7 @@ static const char* getFieldFuncName(Field& f)
 	return n.c_str();
 }
 
-static void generateStubMethodDecl(CodeFile& f, Method& m)
+void CppGenerator::generateStubMethodDecl(CodeFile& f, Method& m)
 {
 	f.listBegin(",", false, "void %s(", m.getNameC());
 	for(size_t i = 0; i < m.fields_.size(); i++)
@@ -114,7 +110,7 @@ static void generateStubMethodDecl(CodeFile& f, Method& m)
 	f.listEnd(");");
 }
 
-static void generateProxyMethodDecl(CodeFile& f, Method& m)
+void CppGenerator::generateProxyMethodDecl(CodeFile& f, Method& m)
 {
 	f.listBegin(",", false, "virtual bool %s(", m.getNameC());
 	for(size_t i = 0; i < m.fields_.size(); i++)
@@ -125,7 +121,7 @@ static void generateProxyMethodDecl(CodeFile& f, Method& m)
 	f.listEnd(") = 0;");
 }
 
-static void generateStructDecl(CodeFile& f, Struct* s)
+void CppGenerator::generateStructDecl(CodeFile& f, Struct* s)
 {
 	f.output("struct %s", s->getNameC());
 	f.indent("{");
@@ -140,7 +136,7 @@ static void generateStructDecl(CodeFile& f, Struct* s)
 	f.recover("};");
 }
 
-static void generateStubDecl(CodeFile& f, Service* s)
+void CppGenerator::generateStubDecl(CodeFile& f, Service* s)
 {
 	f.output("class %sStub", s->getNameC());
 	f.indent("{");
@@ -153,7 +149,7 @@ static void generateStubDecl(CodeFile& f, Service* s)
 	f.recover("};");
 }
 
-static void generateProxyDecl(CodeFile& f, Service* s)
+void CppGenerator::generateProxyDecl(CodeFile& f, Service* s)
 {
 	f.output("class %sProxy", s->getNameC());
 	f.indent("{");
@@ -174,7 +170,7 @@ static void generateProxyDecl(CodeFile& f, Service* s)
 	f.recover("};");
 }
 
-static void generateDispatcherDecl(CodeFile& f, Service* s)
+void CppGenerator::generateDispatcherDecl(CodeFile& f, Service* s)
 {
 	f.output("class %sDispatcher", s->getNameC());
 	f.indent("{");
@@ -187,7 +183,7 @@ static void generateDispatcherDecl(CodeFile& f, Service* s)
 	f.recover("};");
 }
 
-static void generateFieldContainerSCode(CodeFile& f, FieldContainer* fc)
+void CppGenerator::generateFieldContainerSCode(CodeFile& f, FieldContainer* fc)
 {
 	for(size_t i = 0; i < fc->fields_.size(); i++)
 	{
@@ -198,7 +194,7 @@ static void generateFieldContainerSCode(CodeFile& f, FieldContainer* fc)
 	}
 }
 
-static void generateFieldContainerDSCode(CodeFile& f, FieldContainer* fc)
+void CppGenerator::generateFieldContainerDSCode(CodeFile& f, FieldContainer* fc)
 {
 	for(size_t i = 0; i < fc->fields_.size(); i++)
 	{
@@ -211,7 +207,7 @@ static void generateFieldContainerDSCode(CodeFile& f, FieldContainer* fc)
 	}
 }
 
-static void generateStructImp(CodeFile& f, Struct* s)
+void CppGenerator::generateStructImp(CodeFile& f, Struct* s)
 {
 	f.output("%s::%s()", s->getNameC(), s->getNameC());
 	f.indent("{");
@@ -234,7 +230,7 @@ static void generateStructImp(CodeFile& f, Struct* s)
 	f.recover("}");
 }
 
-static void generateStubMethodImp(CodeFile& f, Service*s, Method& m)
+void CppGenerator::generateStubMethodImp(CodeFile& f, Service*s, Method& m)
 {
 	f.listBegin(",", false, "void %sStub::%s(", s->getNameC(), m.getNameC());
 	for(size_t i = 0; i < m.fields_.size(); i++)
@@ -252,13 +248,13 @@ static void generateStubMethodImp(CodeFile& f, Service*s, Method& m)
 	f.recover("}");
 }
 
-static void generateStubImp(CodeFile& f, Service* s)
+void CppGenerator::generateStubImp(CodeFile& f, Service* s)
 {
 	for(size_t i = 0; i < s->methods_.size(); i++)
 		generateStubMethodImp(f, s, s->methods_[i]);
 }
 
-static void generateDispatcherMethodImp(CodeFile&f, Method& m, const std::string& svcName)
+void CppGenerator::generateDispatcherMethodImp(CodeFile&f, Method& m, const std::string& svcName)
 {
 	f.output("bool %sDispatcher::%s(bintalk::BinaryReader* __r__, %sProxy* __p__)", svcName.c_str(), m.getNameC(), svcName.c_str());
 	f.indent("{");
@@ -281,7 +277,7 @@ static void generateDispatcherMethodImp(CodeFile&f, Method& m, const std::string
 	f.recover("}");
 }
 
-static void generateDispatcherImp(CodeFile& f, Service* s)
+void CppGenerator::generateDispatcherImp(CodeFile& f, Service* s)
 {
 	for(size_t i = 0; i < s->methods_.size(); i++)
 		generateDispatcherMethodImp(f, s->methods_[i], s->name_);
@@ -304,60 +300,101 @@ static void generateDispatcherImp(CodeFile& f, Service* s)
 	f.recover("}");
 }
 
-static void generateHFile()
+void CppGenerator::generate()
 {
-	std::string fn = gOptions.output_ + gOptions.inputFS_ + ".h";
+	std::string fn = gOptions.output_ + "bintalk.h";
 	CodeFile f(fn);
-	f.output("#ifndef __%s_h__", gOptions.inputFS_.c_str());
-	f.output("#define __%s_h__", gOptions.inputFS_.c_str());
-	f.output("#include \"bintalk/ProtocolWriter.h\"");
+	
+	f.output("#ifndef __BINTALK_H__", gOptions.inputFS_.c_str());
+	f.output("#define __BINTALK_H__", gOptions.inputFS_.c_str());
+	f.output("#include \"bintalk/Common.h\"");
 	f.output("#include \"bintalk/ProtocolReader.h\"");
-	for(size_t i = 0; i < gContext.rootImported_.size(); i++)
-	{
-		std::string incFN = gContext.rootImported_[i];
-		incFN = incFN.substr(0,incFN.find('.'));
-		f.output("#include \"%s.h\"", incFN.c_str());
-	}
+	f.output("#include \"bintalk/ProtocolWriter.h\"");
+	f.output("#include \"bintalk/FileReader.h\"");
+	f.output("#include \"bintalk/FileWriter.h\"");
+	f.output("#include \"bintalk/MemoryReader.h\"");
+	f.output("#include \"bintalk/MemoryWriter.h\"");
+	f.output("#include \"bintalk/BinaryReader.h\"");
+	f.output("#include \"bintalk/BinaryWriter.h\"");
+	f.output("");
 	for(size_t i = 0; i < gContext.definitions_.size(); i++)
 	{
 		Definition* definition = gContext.definitions_[i];
-		if(definition->file_ != gOptions.inputFN_)
-			continue;
-		if (definition->getEnum())
-			generateEnumDecl(f, definition->getEnum());
-		else if (definition->getStruct())
-			generateStructDecl(f, definition->getStruct());
-		else if (definition->getService())
-		{
-			generateStubDecl(f, definition->getService());
-			generateProxyDecl(f, definition->getService());
-			generateDispatcherDecl(f, definition->getService());
-		}
+		/*if(definition->file_ != gOptions.inputFN_)
+			continue;*/
+
+		definition->visit(this);
+		std::string incf = "#include \"";
+		incf += definition->name_;
+		incf += ".h\"";
+		f.output(incf.c_str());
 	}
+
 	f.output("#endif");
 }
 
-static void generateCPPFile()
+void CppGenerator::accept(Enum *node)
 {
-	CodeFile f(gOptions.output_ + gOptions.inputFS_ + ".cpp");
-	f.output("#include \"%s.h\"", gOptions.inputFS_.c_str());
-	for(size_t i = 0; i < gContext.definitions_.size(); i++)
-	{
-		Definition* definition = gContext.definitions_[i];
-		if(definition->file_ != gOptions.inputFN_)
-			continue;
-		if (definition->getStruct())
-			generateStructImp(f, definition->getStruct());
-		else if (definition->getService())
-		{
-			generateStubImp(f, definition->getService());
-			generateDispatcherImp(f, definition->getService());
-		}
-	}
+	std::string fn = gOptions.output_ + node->name_ + ".h";
+	CodeFile f(fn);
+	f.output("enum %s", node->getNameC());
+	f.indent("{");
+	for(size_t i = 0; i < node->items_.size(); i++)
+		f.output("%s,", node->items_[i].c_str());
+	f.recover("};");
+	f.split();
+	f.output("template<> struct bintalk::info<%s>",node->getNameC());
+	f.indent("{");
+
+	f.output("static inline const bintalk::INT8* toString(bintalk::INT32 index)");
+	f.indent("{");
+	f.output("switch(index)");
+	f.indent("{");
+	for(size_t i = 0; i < node->items_.size(); i++)
+		f.output("case %d: return \"%s\";",i,node->items_[i].c_str());
+	f.output("default: return \"UNKNOWN\";");
+	f.recover("}");
+	f.recover("}");
+	f.output("static inline int toIndex(const char* name)");
+	f.indent("{");
+	f.output("if(NULL == name) return -1;");
+	for(size_t i = 0; i < node->items_.size(); i++)
+		f.output("else if(strcmp(name,\"%s\") == 0) return %d;",node->items_[i].c_str(),i);
+	f.output("else return -1;");
+	f.recover("}");
+	f.recover("};");
+	f.split();
 }
 
-void CppGenerator::generate()
+void CppGenerator::accept(Struct*node)
 {
-	generateHFile();
-	generateCPPFile();
+	std::string fn = gOptions.output_ + node->name_;
+	CodeFile h(fn+".h");
+	generateStructDecl(h,node);
+	CodeFile cpp(fn+".cpp");
+	cpp.split();
+	cpp.output("#include \"bintalk.h\"");
+	cpp.split();
+	generateStructImp(cpp,node);
 }
+
+void CppGenerator::accept(Service*node)
+{
+	std::string fn = gOptions.output_ + node->name_;
+
+	CodeFile h(fn+".h");
+	h.split();
+	generateStubDecl(h,node);
+	h.split();
+	generateProxyDecl(h,node);
+	h.split();
+	generateDispatcherDecl(h,node);
+	CodeFile cpp(fn+".cpp");
+	cpp.split();
+	cpp.output("#include \"bintalk.h\"");
+	cpp.split();
+	generateStubImp(cpp,node);
+	cpp.split();
+	generateDispatcherImp(cpp,node);
+}
+

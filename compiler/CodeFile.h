@@ -11,6 +11,7 @@ public:
 	~CodeFile();
 	void indent(const char* s = NULL);
 	void recover(const char* s = NULL);
+	void split();
 	/** Output a line of indented code. */
 	void output(const char* s, ...);
 	// List output.

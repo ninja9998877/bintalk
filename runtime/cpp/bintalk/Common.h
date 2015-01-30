@@ -37,6 +37,12 @@ T swapEndian(T u)
 	return dest.u;
 }
 
+
+/** bintalk info*/
+
+template < typename T >struct info{};
 }
+
+
 
 #endif// __Common_h__

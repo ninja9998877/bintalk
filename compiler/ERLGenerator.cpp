@@ -1,10 +1,8 @@
 #include "Options.h"
 #include "Context.h"
 #include "CodeFile.h"
-
-#include "CodeGenerator.h"
-DECLARE_CG(ERLGenerator, erl);
-
+#include "ERLGenerator.h"
+static ERLGenerator gen__inside;
 static void generateEnumHRL(CodeFile& f, Enum* e)
 {
 	f.output("%%%% enum %s", e->getNameC());

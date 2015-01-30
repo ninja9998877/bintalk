@@ -35,6 +35,11 @@ void CodeFile::recover(const char* s)
 		output(s);
 }
 
+void CodeFile::split()
+{
+	output("///============================================================================================NNN");
+}
+
 #define PRINT_INDENT(F, I)\
 	for(unsigned int i = 0; i < I; i++)\
 		fprintf(F, "\t");

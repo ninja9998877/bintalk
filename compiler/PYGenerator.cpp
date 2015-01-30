@@ -1,10 +1,8 @@
 #include "Options.h"
 #include "Context.h"
 #include "CodeFile.h"
-
-#include "CodeGenerator.h"
-DECLARE_CG(PYGenerator, py);
-
+#include "PYGenerator.h"
+static PYGenerator gen__inside;
 static void generateEnum(CodeFile& f, Enum* e)
 {
 	f.output("class %s(object):", e->getNameC());

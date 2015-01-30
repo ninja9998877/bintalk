@@ -27,7 +27,7 @@ public:
 
 	/** 输出当前文件行编译错误. */
 	void error(const char* e, ...);
-
+	
 	/** 所有已经被包含过的文件名称，防止重复包含. */
 	std::set<std::string>		imported_;
 	/** 根文件直接包含的文件名称. */

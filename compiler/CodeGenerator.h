@@ -5,32 +5,30 @@
 class Enum;
 class Struct;
 class Service;
+
+enum CodeGenType
+{
+	T_Cpp,
+	T_Cs,
+	T_Erl,
+	T_Py,
+	T_Max
+};
+
 class CodeGenerator
 {
 public:
-	CodeGenerator(const std::string& name);
+	virtual const char* name()=0;
+	virtual CodeGenType type()=0;
 	virtual void generate()=0;
-private:
-	std::string		name_;
-	CodeGenerator*	next_;
-public:
 	virtual void accept(Enum *node){};
 	virtual void accept(Struct*node){};
 	virtual	void accept(Service*node){};
 public:
 	static const char* desc();
 	static bool exec();
-
-private:
-	static CodeGenerator* root_;
+protected:
+	static CodeGenerator* gens_[T_Max];
 };
-
-#define DECLARE_CG(CLASS, NAME) \
-	class CLASS : public CodeGenerator\
-	{public:\
-		CLASS():CodeGenerator(#NAME){}\
-		virtual void generate();\
-	};\
-	CLASS __##NAME##__;
 
 #endif // __Generator_h__
